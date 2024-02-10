@@ -1,12 +1,23 @@
 import { compile, optimize, showError, toSVG } from "@penrose/core/bundle";
 import { App, Plugin, PluginSettingTab, Setting, TFile } from "obsidian";
 
+interface Alias {
+    domain: string;
+    style: string;
+}
+
+interface AliasConfig {
+    [alias: string]: Alias;
+}
+
 interface PenroseSettings {
   mySetting: string;
+  aliases: AliasConfig;
 }
 
 const DEFAULT_SETTINGS: PenroseSettings = {
   mySetting: "default",
+  aliases: {},
 };
 
 export default class PenrosePlugin extends Plugin {
@@ -84,6 +95,7 @@ type Meta = {
 // helper function that extracts metadata of domain path, style path, and variation from a substance source
 const extractMetadata = async (substance: string): Promise<Meta> => {
   // Regular expressions for each key
+  const alias = /--\s*alias:(.*)/;
   const domainRegex = /--\s*domain:(.*)/;
   const styleRegex = /--\s*style:(.*)/;
   const variationRegex = /--\s*variation:(.*)/;
@@ -95,9 +107,20 @@ const extractMetadata = async (substance: string): Promise<Meta> => {
   let domain = "";
   let style = "";
   let variation = "";
-
+  let aliasName = "";
+  
   // Iterate over each line and extract the values
   lines.forEach(async (line) => {
+    const aliasMatch = line.match(alias);
+    if (aliasMatch) {
+      aliasName = aliasMatch[1].trim();
+      const aliasConfig = this.plugin.settings.aliases[aliasName];
+      if (aliasConfig) {
+        domain = aliasConfig.domain;
+        style = aliasConfig.style;
+      }
+    }
+
     const domainMatch = line.match(domainRegex);
     if (domainMatch) {
       domain = domainMatch[1].trim();
@@ -137,7 +160,7 @@ const getTrio = async (
   };
 };
 
-// NOTE: unused for now but left here in case we need more configuration
+// Settings tab
 class PenroseSettingTab extends PluginSettingTab {
   plugin: PenrosePlugin;
 
@@ -150,17 +173,70 @@ class PenroseSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    new Setting(containerEl)
-      .setName("")
-      .setDesc("It's a secret")
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter your secret")
-          .setValue(this.plugin.settings.mySetting)
-          .onChange(async (value) => {
-            this.plugin.settings.mySetting = value;
-            await this.plugin.saveSettings();
-          }),
-      );
+    containerEl.createEl('h2', { text: 'Alias Settings' });
+
+    const aliasConfigContainer = containerEl.createEl('div', { cls: 'alias-config-container' });
+
+    // Display existing aliases and allow editing/deleting
+    const aliases = this.plugin.settings.aliases;
+    for (const alias in aliases) {
+      const aliasObj = aliases[alias];
+      const aliasSettingsContainer = aliasConfigContainer.createEl('div', { cls: 'alias-settings-container' });
+
+      const aliasNameInput = new Setting(aliasSettingsContainer)
+        .setName('Alias Name')
+        .setDesc('Enter the name of the alias')
+        .addText(text => text
+          .setPlaceholder('Alias Name')
+          .setValue(alias)
+          .onChange(value => {
+              // TODO: Implement renaming
+              
+          })
+        );
+
+      const aliasDomainInput = new Setting(aliasSettingsContainer)
+        .setName('Domain')
+        .setDesc('Enter the domain for the alias')
+        .addText(text => text
+          .setPlaceholder('Enter domain')
+          .setValue(aliasObj.domain)
+          .onChange(value => {
+              this.plugin.settings.aliases[alias].domain = value;
+              this.plugin.saveData(this.plugin.settings);
+          })
+        );
+
+      const aliasStyleInput = new Setting(aliasSettingsContainer)
+        .setName('Style')
+        .setDesc('Enter the style for the alias')
+        .addText(text => text
+          .setPlaceholder('Enter style')
+          .setValue(aliasObj.style)
+          .onChange(value => {
+              this.plugin.settings.aliases[alias].style = value;
+              this.plugin.saveData(this.plugin.settings);
+          })
+        );
+
+      const deleteButton = aliasSettingsContainer.createEl('button', { text: 'Delete', cls: 'delete-button' });
+      deleteButton.onclick = () => {
+        delete this.plugin.settings.aliases[alias];
+        this.plugin.saveData(this.plugin.settings);
+        aliasSettingsContainer.remove();
+      };
+      
+    }
+
+
+    const addButton = aliasConfigContainer.createEl('button', { text: 'Add Alias' });
+    addButton.onclick = () => {
+        const newAliasName = `alias${Object.keys(this.plugin.settings.aliases).length + 1}`;
+        if (newAliasName) {
+            this.plugin.settings.aliases[newAliasName] = { domain: '', style: '' };
+            this.plugin.saveData(this.plugin.settings);
+            this.display(); // Refresh UI
+        }
+    };
   }
 }

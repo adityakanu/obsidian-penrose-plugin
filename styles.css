@@ -6,3 +6,66 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+/* Style for the container of alias configurations */
+.alias-config-container {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #026579;
+    border-radius: 5px;
+    background-color: #121111;
+    
+}
+
+/* Style for individual alias settings container */
+.alias-settings-container {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Style for the delete button */
+.delete-button {
+    margin-left: 10px;
+    background-color: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.delete-button:hover {
+    background-color: #ff7875;
+}
+
+/* Style for the save button */
+.save-button {
+    margin-left: 10px;
+    background-color: #04f919;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.save-button:hover {
+    background-color: #8aff75;
+}
+
+
+/* Style for the add alias button */
+.add-alias-button {
+    margin-top: 20px;
+    background-color: #52c41a;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.add-alias-button:hover {
+    background-color: #73d13d;
+}
